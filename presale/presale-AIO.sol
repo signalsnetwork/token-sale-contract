@@ -326,115 +326,41 @@ contract MintableToken is StandardToken, Ownable {
 }
 
 /**
- * @title SignalsToken
- * @dev Mintable SGN token
+ * @title Signals token
+ * @dev Mintable token created for Signals.Network
  */
 contract SignalsToken is PausableToken, MintableToken {
 
     // Standard token variables
-    string constant public name = "Signals";
+    string constant public name = "SignalsToken";
     string constant public symbol = "SGN";
     uint8 constant public decimals = 9;
-    //uint256 public totalSupply =  100000000*(10**(uint256(decimals)));
 
 }
 
-/**
- * @title OwnableBy - owner isn't msg.sender
- * @dev The Ownable contract has an owner address, and provides basic authorization control
- * functions, this simplifies the implementation of "user permissions".
- */
-contract OwnableBy {
-    address public owner;
+// Public PreSale register contract
+contract PresaleRegister is Ownable {
 
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
-    /**
-     * @dev The Ownable constructor sets the original `owner` of the contract to the _owner
-     * @param _owner address of an selected owner
-     */
-    function OwnableBy(address _owner) {
-        owner = _owner;
-        OwnershipTransferred(msg.sender, _owner);
-    }
-
-    /**
-     * @dev Throws if called by any account other than the owner.
-     */
-    modifier onlyOwner() {
-        require(msg.sender == owner);
-        _;
-    }
-
-    /**
-     * @dev Allows the current owner to transfer control of the contract to a newOwner.
-     * @param newOwner The address to transfer ownership to.
-     */
-    function transferOwnership(address newOwner) onlyOwner public {
-        require(newOwner != address(0));
-        OwnershipTransferred(owner, newOwner);
-        owner = newOwner;
-    }
-
-}
-
-// Signals register contract
-contract PresaleRegister is OwnableBy {
-
-    address public presale;
     mapping (address => bool) verified;
-    mapping (address => uint256) allowed;
-    mapping (address => uint256) bought;
+    event ApprovedInvestor(address indexed investor);
 
-    event ApprovedInvestor(address indexed investor, uint256 amount);
-    event BoughtIn(address indexed investor, uint256 amount);
-
-    // Constructor assigning owner to the issuer
-    function PresaleRegister(address _owner)
-    OwnableBy(_owner)
-    {
-        presale = msg.sender;
-    }
-
-    // Approve function to adjust allowance to investment of each individual investor
-    // @param _investor address sets the beneficiary for later use
-    // @param _amount uint256 is the newly assigned allowance of tokens to buy
-    function approve(address _investor, uint256 _amount) onlyOwner public{
-
+    /*
+     * Approve function to adjust allowance to investment of each individual investor
+     * @param _investor address sets the beneficiary for later use
+     * @param _amount uint256 is the newly assigned allowance of tokens to buy
+    */
+    function approve(address _investor) onlyOwner public{
         verified[_investor] = true;
-        allowed[_investor] += _amount;
-
-        ApprovedInvestor(_investor, _amount);
+        ApprovedInvestor(_investor);
     }
 
-    // Tracker of tokens sold to the investor
-    // @param _investor address of the investor
-    // @param _amount uint256 is the amount of tokens bought
-    function boughtIn(address _investor, uint256 _amount) {
-        require(presale == msg.sender);
-        bought[_investor] += _amount;
-        BoughtIn(_investor, _amount);
-    }
-
-    // Constant call to find out if an investor is registered
-    // @param _investor address to be checked
-    // @return bool is true is _investor was approved
+    /*
+     * Constant call to find out if an investor is registered
+     * @param _investor address to be checked
+     * @return bool is true is _investor was approved
+     */
     function approved(address _investor) constant public returns (bool) {
         return verified[_investor];
-    }
-
-    // Constant call to find out how much is allowance of an investor
-    // @param _investor address to be checked
-    // @return uint256 amount of the total allowance of an investor
-    function allowance(address _investor) constant public returns (uint256) {
-        return allowed[_investor];
-    }
-
-    // Constant call to find out how many did an investor buy
-    // @param _investor address to be checked
-    // @return uint256 amount of the total purchase of an investor
-    function purchased(address _investor) constant public returns (uint256) {
-        return bought[_investor];
     }
 
 }
@@ -551,12 +477,12 @@ contract FinalizableCrowdsale is Crowdsale, Ownable {
 
 
 /**
- * @title SignalsToken pre-sale
- * @dev Signals curated pre-sale contract based on OpenZeppelin implementations
+ * @title Signals token pre-sale
+ * @dev Curated pre-sale contract based on OpenZeppelin implementations
  */
-contract SignalsPresale is FinalizableCrowdsale {
+contract PublicPresale is FinalizableCrowdsale {
 
-    // define Signals depended variables
+    // define PublicPresale depended variables
     uint256 tokensSold;
     uint256 toBeSold;
     uint256 price;
@@ -570,48 +496,42 @@ contract SignalsPresale is FinalizableCrowdsale {
      * @param _endTime uint256 is a time stamp of presale end (can be changed later)
      * @param _wallet address is the address the funds will go to - it's not a multisig
      * @param _token address is the address of the token contract (ownership is required to handle it)
-     * @param _handler address is a utility ownership address of the investor registry
+     * @param _register address is the investor registry
      */
-    function SignalsPresale(uint256 _startTime, uint256 _endTime, address _wallet, SignalsToken _token, address _handler)
+    function PublicPresale(uint256 _startTime, uint256 _endTime, address _wallet, SignalsToken _token, PresaleRegister _register)
     FinalizableCrowdsale()
     Crowdsale(_startTime, _endTime, _wallet, _token)
     {
-        register = createRegisterContract(_handler);
-        toBeSold = 1969482*(10**9);
-        price = 846247; //TODO: adjust at the tiem of issuance
+        register = _register;
+        toBeSold = 1969482*1000000000; //TODO: Adjust at the time of deployment
+        price = 846247; //TODO: Adjust at the time of deployment
     }
 
-    // @dev creates an instance of the presale register contract
-    function createRegisterContract(address _owner) internal returns (PresaleRegister) {
-        return new PresaleRegister(_owner);
-    }
-
-    /** Buy in function to be called mostly from the fallback function
-    * @dev kept public in order to buy for someone else
-    * @param beneficiary address
-    */
+    /*
+     * Buy in function to be called mostly from the fallback function
+     * @dev kept public in order to buy for someone else
+     * @param beneficiary address
+     */
     function buyTokens(address beneficiary) public payable {
         require(beneficiary != 0x0);
         require(validPurchase());
+
         // Check the register if the investor was approved
         require(register.approved(beneficiary));
-
-        uint256 canBuy = register.allowance(beneficiary) - register.purchased(beneficiary);
 
         uint256 weiAmount = msg.value;
 
         // calculate token amount to be created
-        uint256 tokens = howMany(msg.value);
+        uint256 toGet = howMany(msg.value);
 
-        if ((canBuy > 0) && (tokens > 0) && ((tokens + tokensSold) <= toBeSold)) {
+        if ((toGet > 0) && ((toGet + tokensSold) <= toBeSold)) {
             // update state
             weiRaised = weiRaised.add(weiAmount);
-            tokensSold = tokensSold.add(tokens);
+            tokensSold = tokensSold.add(toGet);
 
-            token.mint(beneficiary, tokens);
-            register.boughtIn(beneficiary, tokens);
+            token.mint(beneficiary, toGet);
 
-            TokenPurchase(msg.sender, beneficiary, weiAmount, tokens);
+            TokenPurchase(msg.sender, beneficiary, weiAmount, toGet);
 
             forwardFunds();
         }
@@ -621,22 +541,27 @@ contract SignalsPresale is FinalizableCrowdsale {
 
     }
 
-    /** Helper token emission functions
-    * @param value uint256 of the wei amount that gets invested
-    * @return uint256 of how many tokens can one get
-    */
+    /*
+     *Helper token emission functions
+     * @param value uint256 of the wei amount that gets invested
+     * @return uint256 of how many tokens can one get
+     */
     function howMany(uint256 value) public returns (uint256){
         return (value/price);
     }
 
-    // Adjust finalization to transfer token ownership to the fund holding address for further use
+    /*
+     * Adjust finalization to transfer token ownership to the fund holding address for further use
+     */
     function finalization() internal {
         token.transferOwnership(wallet);
         super.finalization();
     }
 
-    // Optional settings
-    // @param _newEndTime uint256 is the new time stamp of extended presale duration
+    /*
+     * Optional settings to extend the duration
+     * @param _newEndTime uint256 is the new time stamp of extended presale duration
+     */
     function extendDuration(uint256 _newEndTime) onlyOwner {
         require(!isFinalized);
         require(endTime < _newEndTime);

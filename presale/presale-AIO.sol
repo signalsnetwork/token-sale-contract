@@ -332,10 +332,30 @@ contract MintableToken is StandardToken, Ownable {
 contract SignalsToken is PausableToken, MintableToken {
 
     // Standard token variables
-    string constant public name = "SignalsToken";
+    string constant public name = "SGNPresaleToken";
     string constant public symbol = "SGN";
     uint8 constant public decimals = 9;
 
+    event TokensBurned(address initiatior, address indexed _partner, uint256 _tokens);
+
+    /*
+     * Constructor which pauses the token at the time of creation
+     */
+    function SignalsToken() {
+        pause();
+    }
+    /*
+    * @dev Token burn function to be called at the time of token swap
+    * @param _partner address to use for token balance buring
+    * @param _tokens uint256 amount of tokens to burn
+    */
+    function burnTokens(address _partner, uint256 _tokens) public onlyOwner {
+        require(balances[_partner] >= _tokens);
+
+        balances[_partner] -= _tokens;
+        totalSupply -= _tokens;
+        TokensBurned(msg.sender, _partner, _tokens);
+    }
 }
 
 // Public PreSale register contract
@@ -417,7 +437,7 @@ contract Crowdsale {
     }
 
     // low level token purchase function
-    function buyTokens(address beneficiary) public payable {}
+    function buyTokens(address beneficiary) private {}
 
     // send ether to the fund collection wallet
     // override to create custom fund forwarding mechanisms
@@ -503,8 +523,8 @@ contract PublicPresale is FinalizableCrowdsale {
     Crowdsale(_startTime, _endTime, _wallet, _token)
     {
         register = _register;
-        toBeSold = 1969482*1000000000; //TODO: Adjust at the time of deployment
-        price = 846247; //TODO: Adjust at the time of deployment
+        toBeSold = 1969482*1000000000;
+        price = 692981;
     }
 
     /*
@@ -512,7 +532,7 @@ contract PublicPresale is FinalizableCrowdsale {
      * @dev kept public in order to buy for someone else
      * @param beneficiary address
      */
-    function buyTokens(address beneficiary) public payable {
+    function buyTokens(address beneficiary) private {
         require(beneficiary != 0x0);
         require(validPurchase());
 
@@ -524,29 +544,25 @@ contract PublicPresale is FinalizableCrowdsale {
         // calculate token amount to be created
         uint256 toGet = howMany(msg.value);
 
-        if ((toGet > 0) && ((toGet + tokensSold) <= toBeSold)) {
-            // update state
-            weiRaised = weiRaised.add(weiAmount);
-            tokensSold = tokensSold.add(toGet);
+        require((toGet > 0) && (toGet.add(tokensSold) <= toBeSold));
 
-            token.mint(beneficiary, toGet);
+        // update state
+        weiRaised = weiRaised.add(weiAmount);
+        tokensSold = tokensSold.add(toGet);
 
-            TokenPurchase(msg.sender, beneficiary, weiAmount, toGet);
+        token.mint(beneficiary, toGet);
+        TokenPurchase(msg.sender, beneficiary, weiAmount, toGet);
 
-            forwardFunds();
-        }
-        else {
-            revert();
-        }
+        forwardFunds();
 
     }
 
     /*
-     *Helper token emission functions
+     * Helper token emission functions
      * @param value uint256 of the wei amount that gets invested
      * @return uint256 of how many tokens can one get
      */
-    function howMany(uint256 value) public returns (uint256){
+    function howMany(uint256 value) view public returns (uint256){
         return (value/price);
     }
 
@@ -555,7 +571,6 @@ contract PublicPresale is FinalizableCrowdsale {
      */
     function finalization() internal {
         token.transferOwnership(wallet);
-        super.finalization();
     }
 
     /*

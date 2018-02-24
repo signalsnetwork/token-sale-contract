@@ -4,17 +4,16 @@ import '../zeppelin/contracts/ownership/Ownable.sol';
 
 contract CrowdsaleRegister is Ownable {
 
-    struct investment {
+    struct contribution {
         bool approved;
-        address referral;
         uint8 commission;
-        bool extra;
+        uint8 extra;
     }
 
-    mapping (address => investment) verified;
+    mapping (address => contribution) verified;
 
     event ApprovedInvestor(address indexed investor);
-    event ReferralRegistered(address indexed investor, address indexed referral, uint8 commission, bool extra);
+    event BonusesRegistered(address indexed investor, uint8 commission, uint8 extra);
 
     /*
      * Approve function to adjust allowance to investment of each individual investor
@@ -22,14 +21,13 @@ contract CrowdsaleRegister is Ownable {
      * @param _referral address to pay a commission in token to
      * @param _commission uint8 expressed as a number between 0 and 5
     */
-    function approve(address _investor, address _referral, uint8 _commission, bool _extra) onlyOwner public{
-        require(!isContract(_investor) && !isContract(_referral));
+    function approve(address _investor, uint8 _commission, uint8 _extra) onlyOwner public{
+        require(!isContract(_investor));
         verified[_investor].approved = true;
-        if (_referral != 0x0 && _commission <= 5) {
-            verified[_investor].referral = _referral;
+        if (_commission <= 7 && _extra <= 2) {
             verified[_investor].commission = _commission;
             verified[_investor].extra = _extra;
-            ReferralRegistered(_investor, _referral, _commission, _extra);
+            BonusesRegistered(_investor, _commission, _extra);
         }
         ApprovedInvestor(_investor);
     }
@@ -49,8 +47,8 @@ contract CrowdsaleRegister is Ownable {
      * @return address of the referral, returns 0x0 if there is none
      * @return uint8 commission to be paid out on any investment
      */
-    function getReferral(address _investor) view public returns (address referral, uint8 commission, bool extra) {
-        return (verified[_investor].referral, verified[_investor].commission, verified[_investor].extra);
+    function getBonuses(address _investor) view public returns (uint8 commission, uint8 extra) {
+        return (verified[_investor].commission, verified[_investor].extra);
     }
 
     /*
@@ -59,7 +57,7 @@ contract CrowdsaleRegister is Ownable {
      * @return boolean of it is or isn't an contract address
      * @credits Manuel Aráoz
      */
-    function isContract(address addr) private view returns (bool) {
+    function isContract(address addr) public view returns (bool) {
         uint size;
         assembly { size := extcodesize(addr) }
         return size > 0;

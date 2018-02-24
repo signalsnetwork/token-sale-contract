@@ -9,83 +9,71 @@ import './pools/PresalePool.sol';
 
 contract SignalsCrowdsale is FinalizableCrowdsale {
 
-    // define Signals crowdsale dependant variables
+    // Cap related variables
+    uint256 public constant HARD_CAP = 18947368421052630000000;
     uint256 tokensSold;
     uint256 tokensToBeSold;
-    //bool initialized; //TODO: to use in case creation won't fit in one block
-    bool finalized;
+    
+    // Pricing setup
+    uint256 ip; // initial price
+    uint256 fp; // final price
+    uint256 pd; // final price - initial price
+    uint256 tsip; // total supply * initial price
 
-    // initial price
-    uint256 ip;
-    // final price
-    uint256 fp;
-    // final price - initial price
-    uint256 pd = fp - ip;
-    // total supply * initial price
-    uint256 tsip = tokensToBeSold * ip;
-
-    // Pseudo constants
-    uint256 PRICE;
-    uint256 HARD_CAP;
-    CrowdsaleRegister register;
-
+    // Allocation constants
     uint constant ADVISORY_SHARE = 15000000*(10**18);
     uint constant BOUNTY_SHARE = 3000000*(10**18);
     uint constant COMMUNITY_SHARE = 30000000*(10**18);
     uint constant COMPANY_SHARE = 27000000*(10**18);
     uint constant PRESALE_SHARE = 9000000*(10**18); // TODO: change; cca 9.000.000
-    // Sold initially in a private sale
     uint constant PRIVATE_INVESTORS = 30000000*(10**18); // TODO: change
 
-    event SaleExtended(uint newEnd);
-    function SignalsCrowdsale(uint256 _startTime, uint256 _endTime, address _wallet, address _register, uint256 _WEIUSD) public
+    // Address pointers
+    address constant ADVISORS;
+    address constant BOUNTY;
+    address constant COMMUNITY;
+    address constant COMPANY;
+    address constant PRESALE;
+    address constant PRIVATE;
+    CrowdsaleRegister register;
+
+    // Start & End related vars
+    uint256 startTime;
+    bool public ready; 
+    bool public hasEnded;
+    
+    event SaleWillStart(uint256 time);
+    event SaleReady();
+    event SaleEnds();
+
+    function SignalsCrowdsale(address _token, address _wallet, address _register) public
     FinalizableCrowdsale()
-    Crowdsale(_startTime, _endTime, _wallet)
+    Crowdsale(_token, _wallet)
     {
         register = CrowdsaleRegister(_register);
-        HARD_CAP = 18000000/(_WEIUSD);
-        //price = (0.3/_WEIUSD)
-        
         // pricing setup
         tokensToBeSold = 75000000*(10**9);
         ip = 3333;
-        fp = 968681;
-
-        // Pre-alloc contracts publishing
-        AdvisoryPool PoolA = new AdvisoryPool();
-        address PoolB = 0x0; //TODO: find out the allocations
-        CommunityPool PoolC = new CommunityPool();
-        CompanyReserve Reserve = new CompanyReserve();
-        PresalePool PoolP = new PresalePool();
-        // Private sale counting in the main sale
-        address PoolPI = 0x0; //TODO: find out the allocations
-
-        // Pre-allocation to pools
-        token.Mint(address(PoolA),ADVISORY_SHARE);
-        token.Mint(address(PoolB),BOUNTY_SHARE);
-        token.Mint(address(PoolC),COMMUNITY_SHARE);
-        token.Mint(address(Reserve),COMPANY_SHARE);
-        token.Mint(address(PoolP),PRESALE_SHARE);
-        // Private sale distribution
-        token.Mint(address(PoolPI), PRIVATE_INVESTORS);
-        tokensSold = PRESALE_SHARE + PRIVATE_INVESTORS;
-
+        fp = 2833;
+        pd = fp - ip; // final price - initial price
+        tsip = tokensToBeSold * ip; // total supply * initial price
     }
+    
 
     // @return true if the transaction can buy tokens
     function validPurchase() internal constant returns (bool) {
-        bool withinPeriod = now >= startTime && now <= endTime;
+        bool started = (startTime <= now); 
         bool nonZeroPurchase = msg.value != 0;
         bool capNotReached = (weiRaised < HARD_CAP);
         bool approved = register.approved(msg.sender);
-        return withinPeriod && nonZeroPurchase && capNotReached && approved;
+        return ready && started && !hasEnded && nonZeroPurchase && capNotReached && approved;
     }
 
     /*
      * Buy in function to be called from the fallback function
      * @param beneficiary address
      */
-    function buyTokens(address beneficiary) private payable {
+    function buyTokens(address beneficiary) private {
         require(beneficiary != 0x0);
         require(validPurchase());
 
@@ -97,20 +85,19 @@ contract SignalsCrowdsale is FinalizableCrowdsale {
         // update state
         weiRaised = weiRaised.add(weiAmount);
 
-        address referral;
         uint commission;
-        bool extra;
+        uint extra;
         uint premium;
-        (referral,commission, extra) = register.getReferral(msg.sender);
+        (commission, extra) = register.getBonuses(msg.sender);
 
         // If referral was involved, give some percent to the source
-        if (referral != 0x0) {
+        if (commission > 0) {
             premium = tokens.mul(commission).div(100);
-            token.mint(referral, premium);
+            token.mint(BOUNTY, premium);
         }
-        // If extra access granted then give additional 2%
-        if (extra) {
-            tokens += tokens.mul(2).div(100);
+        // If extra access granted then give additional %
+        if (extra > 0) {
+            tokens += tokens.mul(extra).div(100);
         }
         token.mint(beneficiary, tokens);
         TokenPurchase(msg.sender, beneficiary, weiAmount, tokens);
@@ -157,26 +144,55 @@ contract SignalsCrowdsale is FinalizableCrowdsale {
     }
 
     /*
+     * TODO:
+     */
+    function initialize() public onlyOwner {
+        require(!ready);
+
+        // Pre-allocation to pools
+        token.mint(ADVISORS,ADVISORY_SHARE);
+        token.mint(BOUNTY,BOUNTY_SHARE);
+        token.mint(COMMUNITY,COMMUNITY_SHARE);
+        token.mint(COMPANY,COMPANY_SHARE);
+        token.mint(PRESALE,PRESALE_SHARE);
+        token.mint(PRIVATE, PRIVATE_INVESTORS);
+
+        tokensSold = PRESALE_SHARE + PRIVATE_INVESTORS;
+        
+        ready = true; 
+        SaleReady(); 
+    }
+    
+    /*
+     * TODO: 
+     */
+    function changeStart(uint256 _time) onlyOwner {
+        startTime = _time;
+        SaleWillStart(_time);
+    }
+
+    /*
+     * TODO: 
+     */
+    function endSale(bool end) onlyOwner {
+        require(startTime <= now); 
+        hasEnded = end;
+        SaleEnds();
+    }
+    
+    /*
      * Adjust finalization to transfer token ownership to the fund holding address for further use
      */
     function finalization() internal {
+        token.finishMinting(); 
         token.transferOwnership(wallet);
     }
 
-    function cleanShit() onlyOwner {
-        require(finalized);
+    function cleanUp() onlyOwner {
+        require(isFinalized);
         selfdestruct(owner);
     }
-    /*
-     * Optional settings to extend the duration
-     * @param _newEndTime uint256 is the new time stamp of extended presale duration
-     */
-    function extendDuration(uint256 _newEndTime) onlyOwner public {
-        require(!isFinalized);
-        require(endTime < _newEndTime);
-        endTime = _newEndTime;
-        SaleExtended(_newEndTime);
-    }
+
 }
 
 

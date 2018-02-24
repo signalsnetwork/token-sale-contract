@@ -18,7 +18,7 @@ contract PresaleToken is PausableToken, MintableToken {
     /*
      * Constructor which pauses the token at the time of creation
      */
-    function PresaleToken() {
+    function PresaleToken() public {
         pause();
     }
     /*

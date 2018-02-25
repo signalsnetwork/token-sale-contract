@@ -116,7 +116,6 @@ contract PresalePool is Ownable {
 
     /*
      * Function to clean up the state and moved not allocated tokens to custody
-     * @dev TODO: decide if this function should even exist or changed to require 0 tokens left
      */
     function clean() onlyOwner public {
         require(now >= deadLine);

@@ -20,7 +20,7 @@ contract SignalsCrowdsale is FinalizableCrowdsale {
     uint constant COMMUNITY_SHARE = 30000000*(10**18);
     uint constant COMPANY_SHARE = 27000000*(10**18);
     uint constant PRESALE_SHARE = 9000000*(10**18); // TODO: change; cca 9.000.000
-    uint constant PRIVATE_INVESTORS = 30000000*(10**18); // TODO: change
+    uint constant PRIVATE_INVESTORS = 30000000*(10**18); // TODO: change to ?
 
     // Address pointers
     address constant ADVISORS = 0x28dd7d6f41331e5013ee6c802641cc63b06c238a;
@@ -92,7 +92,7 @@ contract SignalsCrowdsale is FinalizableCrowdsale {
         TokenPurchase(msg.sender, beneficiary, weiAmount, tokens);
         tokensSold += tokens + premium;
         forwardFunds();
-        // TODO: check HARD_CAP wasn't passed
+        // TODO: check HARD_CAP wasn't passed (or don't?)
     }
 
     /*
@@ -105,7 +105,8 @@ contract SignalsCrowdsale is FinalizableCrowdsale {
     }
 
     /*
-     * TODO:
+     * Function to do preallocations - MANDATORY to continue
+     * @dev It's separated so it doesn't have to run in constructor
      */
     function initialize() public onlyOwner {
         require(!ready);
@@ -123,9 +124,9 @@ contract SignalsCrowdsale is FinalizableCrowdsale {
         ready = true; 
         SaleReady(); 
     }
-    
+
     /*
-     * TODO: 
+     * Function to do set or adjust the startTime - NOT MANDATORY but good for future start
      */
     function changeStart(uint256 _time) onlyOwner {
         startTime = _time;
@@ -133,7 +134,8 @@ contract SignalsCrowdsale is FinalizableCrowdsale {
     }
 
     /*
-     * TODO: 
+     * Function end or pause the sale
+     * @dev It's MANDATORY to finalize()
      */
     function endSale(bool end) onlyOwner {
         require(startTime <= now); 
@@ -149,6 +151,9 @@ contract SignalsCrowdsale is FinalizableCrowdsale {
         token.transferOwnership(wallet);
     }
 
+    /*
+     * Clean up function to get the contract selfdestructed - OPTIONAL
+     */
     function cleanUp() onlyOwner {
         require(isFinalized);
         selfdestruct(owner);

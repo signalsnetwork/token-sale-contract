@@ -9,16 +9,10 @@ import './pools/PresalePool.sol';
 
 contract SignalsCrowdsale is FinalizableCrowdsale {
 
-    // Cap related variables
+    // Cap & price related values
     uint256 public constant HARD_CAP = 18947368421052630000000;
-    uint256 tokensSold;
-    uint256 tokensToBeSold;
-    
-    // Pricing setup
-    uint256 ip; // initial price
-    uint256 fp; // final price
-    uint256 pd; // final price - initial price
-    uint256 tsip; // total supply * initial price
+    uint256 public constant INITIAL_PRICE = 3333;
+    uint256 public tokensSold;
 
     // Allocation constants
     uint constant ADVISORY_SHARE = 15000000*(10**18);
@@ -29,19 +23,19 @@ contract SignalsCrowdsale is FinalizableCrowdsale {
     uint constant PRIVATE_INVESTORS = 30000000*(10**18); // TODO: change
 
     // Address pointers
-    address constant ADVISORS;
-    address constant BOUNTY;
-    address constant COMMUNITY;
-    address constant COMPANY;
-    address constant PRESALE;
-    address constant PRIVATE;
+    address constant ADVISORS = 0x28dd7d6f41331e5013ee6c802641cc63b06c238a;
+    address constant BOUNTY = 0x4b0897b0513fdc7c541b6d9d7e929c4e5364d2db;
+    address constant COMMUNITY = 0x50188f5ba2cd4dfde54469893d53a2e0c4b71824;
+    address constant COMPANY = 0xa4b34e7863b1c17e27b51761646e8dfd5da56e2b;
+    address constant PRESALE = 0xd7c1f640af9b2947edc5ca9445e3eb75e5d7d9c0;
+    address constant PRIVATE = 0x4b0897b0513fdc7c541b6d9d7e929c4e5364d2db;
     CrowdsaleRegister register;
 
     // Start & End related vars
     uint256 startTime;
-    bool public ready; 
-    bool public hasEnded;
-    
+    bool public ready;
+
+    // Events
     event SaleWillStart(uint256 time);
     event SaleReady();
     event SaleEnds();
@@ -51,12 +45,7 @@ contract SignalsCrowdsale is FinalizableCrowdsale {
     Crowdsale(_token, _wallet)
     {
         register = CrowdsaleRegister(_register);
-        // pricing setup
-        tokensToBeSold = 75000000*(10**9);
-        ip = 3333;
-        fp = 2833;
-        pd = fp - ip; // final price - initial price
-        tsip = tokensToBeSold * ip; // total supply * initial price
+
     }
     
 
@@ -112,35 +101,7 @@ contract SignalsCrowdsale is FinalizableCrowdsale {
      * @return uint256 of how many tokens can one get
      */
     function howMany(uint256 value) public returns (uint256){
-        uint256 a = sqrt(4*((tsip+pd*tokensSold)**2)+value.mul(8*pd*tokensToBeSold));
-        uint256 b = 2*(tsip+pd*tokensSold);
-        uint256 c = 2*pd;
-
-        // get a result with
-        return round(((a-b)*10)/c);
-    }
-
-    // improved rounding function for the first decimal
-    function round(uint x) internal returns (uint y) {
-        uint z = x % 10;
-
-        if (z < 5) {
-            return x/10;
-        }
-
-        else {
-            return (x/10)+1;
-        }
-    }
-
-    // squareroot implementation
-    function sqrt(uint x) internal returns (uint y) {
-        uint z = (x + 1) / 2;
-        y = x;
-        while (z < y) {
-            y = z;
-            z = (x / z + z) / 2;
-        }
+        return value * (INITIAL_PRICE - (INITIAL_PRICE*((weiRaised/HARD_CAP)*15/100)));
     }
 
     /*

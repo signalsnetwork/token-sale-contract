@@ -21,9 +21,8 @@ contract AdvisoryPool is Ownable{
     address ADVISER4 = address(this);
     address ADVISER5 = address(this);
     address ADVISER6 = address(this);
-    address ADVISER7 = address(this);
     
-    TokenTimeLock public tokenLocker7; 
+    TokenTimeLock public tokenLocker6; 
 
     /*
      * Constructor changing owner to owner multisig & calling the allocation
@@ -40,17 +39,16 @@ contract AdvisoryPool is Ownable{
      * @dev only accessible from the constructor
      */
     function initiate() public onlyOwner {
-        require(token.balanceOf(address(this)) == 7500000*(10**18));
+        require(token.balanceOf(address(this)) == 15000000*(10**18));
         
-        tokenLocker7 = new TokenTimeLock(address(token), ADVISER7, 31536000);
+        tokenLocker6 = new TokenTimeLock(address(token), ADVISER6, 31536000);
 
         token.transfer(ADVISER1, 1500000*(10**18));
-        token.transfer(ADVISER2, 1000000*(10**18));
-        token.transfer(ADVISER3, 1000000*(10**18));
-        token.transfer(ADVISER4, 1000000*(10**18));
-        token.transfer(ADVISER5, 1000000*(10**18));
-        token.transfer(ADVISER6, 1000000*(10**18));
-        token.transfer(address(tokenLocker7), 1000000*(10**18));
+        token.transfer(ADVISER2, 1500000*(10**18));
+        token.transfer(ADVISER3, 1500000*(10**18));
+        token.transfer(ADVISER4, 1500000*(10**18));
+        token.transfer(ADVISER5, 500000*(10**18));
+        token.transfer(address(tokenLocker6), 1000000*(10**18));
     }
 
     /*

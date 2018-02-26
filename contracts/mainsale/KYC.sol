@@ -24,7 +24,7 @@ contract CrowdsaleRegister is Ownable {
     function approve(address _investor, uint8 _commission, uint8 _extra) onlyOwner public{
         require(!isContract(_investor));
         verified[_investor].approved = true;
-        if (_commission <= 7 && _extra <= 2) {
+        if (_commission <= 15 && _extra <= 5) {
             verified[_investor].commission = _commission;
             verified[_investor].extra = _extra;
             BonusesRegistered(_investor, _commission, _extra);

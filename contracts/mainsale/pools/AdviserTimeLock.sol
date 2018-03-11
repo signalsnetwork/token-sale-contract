@@ -1,59 +1,60 @@
 pragma solidity ^0.4.20;
 
+import '../../zeppelin/contracts/ownership/Ownable.sol';
+import '../SignalsToken.sol';
+
 /*
  * Company reserve pool where the tokens will be locked for two years
  * @title Company token reserve
  */
-contract CompanyReserve {
+contract AdviserTimeLock is Ownable{
 
     SignalsToken token;
     uint256 withdrawn;
     uint start;
+
+    event TokensWithdrawn(address owner, uint amount);
 
     /*
      * Constructor changing owner to owner multisig & setting time lock
      * @param address of the Signals Token contract
      * @param address of the owner multisig
      */
-    function CompanyReserve(address _token, address _owner) public {
+    function AdviserTimeLock(address _token, address _owner) public{
         token = SignalsToken(_token);
         owner = _owner;
         start = now;
+        // Initial token allocation;
+        token.transfer(owner, 1850000000000000000000000); // Initial allowance
+        TokenWithdrawn(owner, 1850000000000000000000000);
     }
 
-    event TokensWithdrawn(address owner, uint amount);
-
     /*
-     * Only function for the tokens withdrawal (3% anytime, 5% after one year, 10% after two year)
+     * Only function for periodical tokens withdrawal (with monthly allowance)
      * @dev Will withdraw the whole allowance;
      */
     function withdraw() onlyOwner public {
         require(now - start >= 25920000);
-        uint256 toWithdraw = canWithdraw();
-        withdrawn += toWithdraw;
+        uint toWithdraw = canWithdraw();
         token.transfer(owner, toWithdraw);
+        withdrawn += toWithdraw;
         TokensWithdrawn(owner, toWithdraw);
     }
 
     /*
-     * Checker function to find out how many tokens can be withdrawn.
-     * note: percentage of the token.totalSupply
+     * Only function for the tokens withdrawal (with two years time lock)
      * @dev Based on division down rounding
      */
     function canWithdraw() public returns (uint256) {
         uint256 sinceStart = now - start;
-        uint256 allowed;
-
-        if (sinceStart >= 0) {
-            allowed = 555000000000000000000000;
-        } else if (sinceStart >= 31536000) { // one year difference
-            allowed = 1480000000000000000000000;
-        } else if (sinceStart >= 63072000) { // two years difference
-            allowed = 3330000000000000000000000;
+        uint256 allowed = (sinceStart/2592000)*504546000000000000000000;
+        uint256 toWithdraw;
+        if (allowed > token.balanceOf(this(address))) {
+            toWithdraw = token.balanceOf(this(address));
         } else {
-            return 0;
+            toWithdraw = allowed - withdrawn;
         }
-        return allowed - withdrawn;
+        return toWithdraw;
     }
 
     /*

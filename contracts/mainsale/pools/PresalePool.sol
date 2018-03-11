@@ -46,7 +46,7 @@ contract PresalePool is Ownable {
         registry = CrowdsaleRegister(_registry);
         compensation1 = comp1;
         compensation2 = comp2;
-        deadLine = now + 365 days;
+        deadLine = now + 30 days;
     }
 
     /*

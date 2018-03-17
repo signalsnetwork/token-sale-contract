@@ -13,8 +13,8 @@ import '../KYC.sol';
  */
 contract PresalePool is Ownable {
 
-    PresaleToken PublicPresale;
-    PresaleToken PartnerPresale;
+    PresaleToken public PublicPresale;
+    PresaleToken public PartnerPresale;
     SignalsToken token;
     CrowdsaleRegister registry;
 
@@ -40,7 +40,7 @@ contract PresalePool is Ownable {
      */
     function PresalePool(address _token, address _registry, address _owner, uint comp1, uint comp2) public {
         owner = _owner;
-        PublicPresale = PresaleToken(0x15fEcCA27add3D28C55ff5b01644ae46edF15821);
+        PublicPresale = PresaleToken(0x15fEcCA27add3D28C55ff5b01644ae46edF15821); 
         PartnerPresale = PresaleToken(0xa70435D1a3AD4149B0C13371E537a22002Ae530d);
         token = SignalsToken(_token);
         registry = CrowdsaleRegister(_registry);

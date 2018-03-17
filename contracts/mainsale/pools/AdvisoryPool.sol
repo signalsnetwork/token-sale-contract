@@ -38,7 +38,7 @@ contract AdvisoryPool is Ownable{
     address constant ADVISER21 = 0x0E48bbc496Ae61bb790Fc400D1F1a57520f772Df;
     address constant ADVISER22 = 0x06Ee8eCc0145CcaCEc829490e3c557f577BE0e85;
     address constant ADVISER23 = 0xbE56bFF75A1cB085674Cc37a5C8746fF6C43C442;
-    address constant ADVISER24 = 0xeefB9234302128259D46ED9e223FBC48b5edb5D1;
+    address constant ADVISER24 = 0xb442b5297E4aEf19E489530E69dFef7fae27F4A5;
     address constant ADVISER25 = 0x50EF1d6a7435C7FB3dB7c204b74EB719b1EE3dab;
     address constant ADVISER26 = 0x3e9fed606822D5071f8a28d2c8B51E6964160CB2;
 
@@ -59,35 +59,36 @@ contract AdvisoryPool is Ownable{
      * @dev only accessible from the constructor
      */
     function initiate() public onlyOwner {
-        require(token.balanceOf(address(this)) == 18500000000000000000000000);
+        require(token.balanceOf(address(this)) == 18500000000000000);
         tokenLocker23 = new AdviserTimeLock(address(token), ADVISER23);
 
-        token.transfer(ADVISER1, 380952380000000000000000);
-        token.transfer(ADVISER2, 380952380000000000000000);
-        token.transfer(ADVISER3, 659200000000000000000000);
-        token.transfer(ADVISER4, 95238100000000000000000);
-        token.transfer(ADVISER5, 1850000000000000000000000);
-        token.transfer(ADVISER6, 15384620000000000000000);
-        token.transfer(ADVISER7, 62366450000000000000000);
-        token.transfer(ADVISER8, 116805560000000000000000);
-        token.transfer(ADVISER9, 153846150000000000000000);
-        token.transfer(ADVISER10, 10683760000000000000000);
-        token.transfer(ADVISER11, 114285710000000000000000);
-        token.transfer(ADVISER12, 576923080000000000000000);
-        token.transfer(ADVISER13, 76190480000000000000000);
-        token.transfer(ADVISER14, 133547010000000000000000);
-        token.transfer(ADVISER15, 96153850000000000000000);
-        token.transfer(ADVISER16, 462500000000000000000000);
-        token.transfer(ADVISER17, 462500000000000000000000);
-        token.transfer(ADVISER18, 399865380000000000000000);
-        token.transfer(ADVISER19, 20032050000000000000000);
-        token.transfer(ADVISER20, 35559130000000000000000);
-        token.transfer(ADVISER21, 113134000000000000000000);
-        token.transfer(ADVISER22, 113134000000000000000000);
-        token.transfer(address(tokenLocker23), 7400000000000000000000000);
-        token.transfer(ADVISER24, 100000000000000000000000);
-        token.transfer(ADVISER25, 100000000000000000000000);
-        token.transfer(ADVISER26, 2747253000000000000000000);
+        token.transfer(ADVISER1, 380952380000000);
+        token.transfer(ADVISER2, 380952380000000);
+        token.transfer(ADVISER3, 659200000000000);
+        token.transfer(ADVISER4, 95238100000000);
+        token.transfer(ADVISER5, 1850000000000000);
+        token.transfer(ADVISER6, 15384620000000);
+        token.transfer(ADVISER7, 62366450000000);
+        token.transfer(ADVISER8, 116805560000000);
+        token.transfer(ADVISER9, 153846150000000);
+        token.transfer(ADVISER10, 10683760000000);
+        token.transfer(ADVISER11, 114285710000000);
+        token.transfer(ADVISER12, 576923080000000);
+        token.transfer(ADVISER13, 76190480000000);
+        token.transfer(ADVISER14, 133547010000000);
+        token.transfer(ADVISER15, 96153850000000);
+        token.transfer(ADVISER16, 462500000000000);
+        token.transfer(ADVISER17, 462500000000000);
+        token.transfer(ADVISER18, 399865380000000);
+        token.transfer(ADVISER19, 20032050000000);
+        token.transfer(ADVISER20, 35559130000000);
+        token.transfer(ADVISER21, 113134000000000);
+        token.transfer(ADVISER22, 113134000000000);
+        token.transfer(address(tokenLocker23), 5550000000000000);
+        token.transfer(ADVISER23, 1850000000000000);
+        token.transfer(ADVISER24, 100000000000000);
+        token.transfer(ADVISER25, 100000000000000);
+        token.transfer(ADVISER26, 2747253000000000);
 
     }
 

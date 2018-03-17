@@ -1,10 +1,13 @@
 pragma solidity ^0.4.20;
 
+import '../../zeppelin/contracts/ownership/Ownable.sol';
+import '../SignalsToken.sol';
+
 /*
  * Company reserve pool where the tokens will be locked for two years
  * @title Company token reserve
  */
-contract CompanyReserve {
+contract CompanyReserve is Ownable{
 
     SignalsToken token;
     uint256 withdrawn;
@@ -40,16 +43,16 @@ contract CompanyReserve {
      * note: percentage of the token.totalSupply
      * @dev Based on division down rounding
      */
-    function canWithdraw() public returns (uint256) {
+    function canWithdraw() public view returns (uint256) {
         uint256 sinceStart = now - start;
         uint256 allowed;
 
         if (sinceStart >= 0) {
-            allowed = 555000000000000000000000;
+            allowed = 555000000000000;
         } else if (sinceStart >= 31536000) { // one year difference
-            allowed = 1480000000000000000000000;
+            allowed = 1480000000000000;
         } else if (sinceStart >= 63072000) { // two years difference
-            allowed = 3330000000000000000000000;
+            allowed = 3330000000000000;
         } else {
             return 0;
         }

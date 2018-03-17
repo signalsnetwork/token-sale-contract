@@ -1,7 +1,5 @@
 pragma solidity ^0.4.20;
 
-import '../../zeppelin/contracts/ownership/Ownable.sol';
-import '../SignalsToken.sol';
 
 /*
  * Company reserve pool where the tokens will be locked for two years
@@ -24,9 +22,6 @@ contract AdviserTimeLock is Ownable{
         token = SignalsToken(_token);
         owner = _owner;
         start = now;
-        // Initial token allocation;
-        token.transfer(owner, 1850000000000000000000000); // Initial allowance
-        TokenWithdrawn(owner, 1850000000000000000000000);
     }
 
     /*
@@ -45,12 +40,12 @@ contract AdviserTimeLock is Ownable{
      * Only function for the tokens withdrawal (with two years time lock)
      * @dev Based on division down rounding
      */
-    function canWithdraw() public returns (uint256) {
+    function canWithdraw() public view returns (uint256) {
         uint256 sinceStart = now - start;
-        uint256 allowed = (sinceStart/2592000)*504546000000000000000000;
+        uint256 allowed = (sinceStart/2592000)*504546000000000;
         uint256 toWithdraw;
-        if (allowed > token.balanceOf(this(address))) {
-            toWithdraw = token.balanceOf(this(address));
+        if (allowed > token.balanceOf(address(this))) {
+            toWithdraw = token.balanceOf(address(this));
         } else {
             toWithdraw = allowed - withdrawn;
         }

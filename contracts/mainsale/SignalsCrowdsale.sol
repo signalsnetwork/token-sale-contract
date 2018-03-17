@@ -11,29 +11,29 @@ import './pools/PresalePool.sol';
 contract SignalsCrowdsale is FinalizableCrowdsale {
 
     // Cap & price related values
-    uint256 public constant HARD_CAP =  18000*(10**18);
+    uint256 public constant HARD_CAP = 18000*(10**18);
+    uint256 public toBeRaised = 18000*(10**18);
     uint256 public constant PRICE = 360000;
     uint256 public tokensSold;
-    uint256 public constant maxTokens = 18500000*(10**18);
+    uint256 public constant maxTokens = 185000000*(10**9);
 
     // Allocation constants
-    uint constant ADVISORY_SHARE = 18500000*(10**18); //FIXED
-    uint constant BOUNTY_SHARE = 3700000*(10**18); // FIXED
-    uint constant COMMUNITY_SHARE = 37000000*(10**18); //FIXED
-    uint constant COMPANY_SHARE = 33300000*(10**18); //FIXED
-    uint constant PRESALE_SHARE = 9000000*(10**18); // TODO: change;
+    uint constant ADVISORY_SHARE = 18500000*(10**9); //FIXED
+    uint constant BOUNTY_SHARE = 3700000*(10**9); // FIXED
+    uint constant COMMUNITY_SHARE = 37000000*(10**9); //FIXED
+    uint constant COMPANY_SHARE = 33300000*(10**9); //FIXED
+    uint constant PRESALE_SHARE = 7856217611546440; // FIXED;
 
     // Address pointers
-    address constant ADVISORS = 0x28dd7d6f41331e5013ee6c802641cc63b06c238a; // TODO: change
-    address constant BOUNTY = 0x4b0897b0513fdc7c541b6d9d7e929c4e5364d2db; // TODO: change
-    address constant COMMUNITY = 0x50188f5ba2cd4dfde54469893d53a2e0c4b71824; // TODO: change
-    address constant COMPANY = 0xa4b34e7863b1c17e27b51761646e8dfd5da56e2b; // TODO: change
-    address constant PRESALE = 0xd7c1f640af9b2947edc5ca9445e3eb75e5d7d9c0; // TODO: change
+    address constant ADVISORS = 0x98280b2FD517a57a0B8B01b674457Eb7C6efa842; // TODO: change
+    address constant BOUNTY = 0x8726D7ac344A0BaBFd16394504e1cb978c70479A; // TODO: change
+    address constant COMMUNITY = 0x90CDbC88aB47c432Bd47185b9B0FDA1600c22102; // TODO: change
+    address constant COMPANY = 0xC010b2f2364372205055a299B28ef934f090FE92; // TODO: change
+    address constant PRESALE = 0x7F3a38fa282B16973feDD1E227210Ec020F2481e; // TODO: change
     CrowdsaleRegister register;
     PrivateRegister register2;
 
     // Start & End related vars
-    uint256 startTime;
     bool public ready;
 
     // Events
@@ -71,13 +71,14 @@ contract SignalsCrowdsale is FinalizableCrowdsale {
         uint256 weiAmount = msg.value;
 
         // base discount
-        uint256 discount = (1-(weiRaised/HARD_CAP)*15);
-
+        uint256 discount = ((toBeRaised*10000)/HARD_CAP)*15;
+                
         // calculate token amount to be created
         uint256 tokens;
 
         // update state
         weiRaised = weiRaised.add(weiAmount);
+        toBeRaised = toBeRaised.sub(weiAmount);
 
         uint commission;
         uint extra;
@@ -88,7 +89,7 @@ contract SignalsCrowdsale is FinalizableCrowdsale {
 
             // If extra access granted then give additional %
             if (extra > 0) {
-                discount += extra;
+                discount += extra*10000;
             }
             tokens =  howMany(msg.value, discount);
 
@@ -101,7 +102,7 @@ contract SignalsCrowdsale is FinalizableCrowdsale {
         } else {
             extra = register2.getBonuses(beneficiary);
             if (extra > 0) {
-                discount = extra;
+                discount = extra*10000;
                 tokens =  howMany(msg.value, discount);
             }
         }
@@ -110,7 +111,8 @@ contract SignalsCrowdsale is FinalizableCrowdsale {
         TokenPurchase(msg.sender, beneficiary, weiAmount, tokens);
         tokensSold += tokens + premium;
         forwardFunds();
-
+        
+        assert(token.totalSupply() <= maxTokens);
     }
 
     /*
@@ -118,8 +120,8 @@ contract SignalsCrowdsale is FinalizableCrowdsale {
      * @param value uint256 of the wei amount that gets invested
      * @return uint256 of how many tokens can one get
      */
-    function howMany(uint256 value, uint256 _discount) public returns (uint256){
-        uint256 actualPrice = PRICE * (100 - discount) / 100;
+    function howMany(uint256 value, uint256 discount) public view returns (uint256){
+        uint256 actualPrice = PRICE * (1000000 - discount) / 1000000;
         return value / actualPrice;
     }
 
@@ -137,7 +139,7 @@ contract SignalsCrowdsale is FinalizableCrowdsale {
         token.mint(COMPANY,COMPANY_SHARE);
         token.mint(PRESALE,PRESALE_SHARE);
 
-        tokensSold = PRESALE_SHARE + PRIVATE_INVESTORS;
+        tokensSold = PRESALE_SHARE;
         
         ready = true; 
         SaleReady(); 
@@ -146,7 +148,7 @@ contract SignalsCrowdsale is FinalizableCrowdsale {
     /*
      * Function to do set or adjust the startTime - NOT MANDATORY but good for future start
      */
-    function changeStart(uint256 _time) onlyOwner {
+    function changeStart(uint256 _time) public onlyOwner {
         startTime = _time;
         SaleWillStart(_time);
     }
@@ -155,7 +157,7 @@ contract SignalsCrowdsale is FinalizableCrowdsale {
      * Function end or pause the sale
      * @dev It's MANDATORY to finalize()
      */
-    function endSale(bool end) onlyOwner {
+    function endSale(bool end) public onlyOwner {
         require(startTime <= now);
         uint256 tokensLeft = maxTokens - token.totalSupply();
         if (tokensLeft > 0) {
@@ -176,7 +178,7 @@ contract SignalsCrowdsale is FinalizableCrowdsale {
     /*
      * Clean up function to get the contract selfdestructed - OPTIONAL
      */
-    function cleanUp() onlyOwner {
+    function cleanUp() public onlyOwner {
         require(isFinalized);
         selfdestruct(owner);
     }

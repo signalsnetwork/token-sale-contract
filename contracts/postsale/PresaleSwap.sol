@@ -10,14 +10,15 @@ import '../mainsale/pools/PresalePool.sol';
  *  @dev Requires to transfer ownership of the PresalePool to this contract
  */
 contract PresaleSwap is Ownable {
-    PresalePool PPool = PresalePool(0x0);
-    SignalsToken SGN = SignalsToken(0x0);
-    CrowdsaleRegister KYC = CrowdsaleRegister(0x0);
+    PresalePool PPool = PresalePool(0x7F3a38fa282B16973feDD1E227210Ec020F2481e);
+    SignalsToken SGN = SignalsToken(0xb2135ab9695a7678dd590b1a996cb0f37bcb0718);
+    CrowdsaleRegister KYC = CrowdsaleRegister(0xd5D7D89a913F0AeB3B9a4a685a7c846e8220fc07);
 
     mapping (address => uint256)addAllowance;
+    bool cleanCalled = false;
 
     event Swapped(address beneficiary, bool success);
-    event TokensGrated(address beneficiary, uint256 allowance);
+    event TokensGranted(address beneficiary, uint256 allowance);
 
     constructor() {
     }
@@ -44,7 +45,8 @@ contract PresaleSwap is Ownable {
         }
     }
 
-    function changeAllowance(address beneficiary, uint256 allowance) onlyOwner {
+
+    function changeAllowance(address beneficiary, uint256 allowance) public onlyOwner {
         addAllowance[beneficiary] = allowance;
         emit AllowanceChanged(beneficiary, allowance);
     }
@@ -53,9 +55,19 @@ contract PresaleSwap is Ownable {
      * Function to clean up the state and moved not allocated tokens to custody
      */
     function clean() onlyOwner public {
-        PPool.clean();
-        uint256 notAllocated = token.balanceOf(address(this));
-        SGN.transfer(owner, notAllocated);
-        selfdestruct(owner);
+
+        // to ensure it's not called accidentally
+        if (cleanCalled == false) {
+            cleanCalled = true;
+        }
+
+        // on second call DO clean up
+        if (cleanCalled == true) {
+            PPool.clean();
+            uint256 notAllocated = token.balanceOf(address(this));
+            SGN.transfer(owner, notAllocated);
+            selfdestruct(owner);
+        }
+
     }
 }

@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 import '../zeppelin/contracts/ownership/Ownable.sol';
-import '../zeppelin/contracts/lifecycle/Pausabe.sol';
+import '../zeppelin/contracts/lifecycle/Pausable.sol';
 import '../mainsale/SignalsToken.sol';
 
 
@@ -30,7 +30,7 @@ contract Bounty is Ownable, Pausable {
      * @dev Relies on proper backend handling
      * @dev Requires SGN allowance at the TokenBucket for this contract
      */
-    function payBounty(string uID, address beneficiary, uint256 amount) onlyOwner {
+    function payBounty(string uID, address beneficiary, uint256 amount) onlyOwner public{
         require(!onlyOnce[uID]);
 
         SGN.transferFrom(TokenBucket, beneficiary, amount);
@@ -42,7 +42,7 @@ contract Bounty is Ownable, Pausable {
     /*
      * Proxy function to swapFor
      */
-    function clean() onlyOwner {
+    function clean() onlyOwner public {
         selfdestruct(owner);
     }
 
@@ -50,7 +50,7 @@ contract Bounty is Ownable, Pausable {
      * Function to change the TokenBucket - address with SGN allowance for this contract
      * @param address newBucket - new address which is expected to have an allowance for this contract
      */
-    function changeTokenBucket(address newBucket) {
+    function changeTokenBucket(address newBucket) onlyOwner public {
         TokenBucket = newBucket;
         emit TokenBucketChanged(newBucket);
     }

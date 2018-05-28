@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 import '../zeppelin/contracts/ownership/Ownable.sol';
-import '../zeppelin/contracts/lifecycle/Pausabe.sol';
+import '../zeppelin/contracts/lifecycle/Pausable.sol';
 import '../mainsale/pools/PresalePool.sol';
 
 /*
@@ -16,12 +16,13 @@ contract PresaleSwap is Ownable, Pausable {
     CrowdsaleRegister KYC = CrowdsaleRegister(0xd5D7D89a913F0AeB3B9a4a685a7c846e8220fc07);
     address public TokenBucket;
 
-    mapping (address => uint256)addAllowance;
+    mapping (address => uint256) addAllowance;
     bool cleanCalled = false;
 
     event Swapped(address beneficiary, bool success);
     event TokensGranted(address beneficiary, uint256 allowance);
     event TokenBucketChanged(address newBucket);
+    event AllowanceChanged(address beneficiary, uint256 allowance);
 
     /*
      * Constructor to set the TokenBucket
@@ -83,8 +84,8 @@ contract PresaleSwap is Ownable, Pausable {
      * @dev should be tested for max length of arrays
      */
     function massChangeAllowance(address[] beneficiaries, uint256[] allowances) onlyOwner {
-        uint256 lenInput1 = beneficiaries.lenght;
-        uint256 lenInput2 = beneficiaries.lenght;
+        uint256 lenInput1 = beneficiaries.length;
+        uint256 lenInput2 = beneficiaries.length;
         require(lenInput1 == lenInput2);
 
         for (uint256 i; i < lenInput1 ;i++) {
@@ -105,7 +106,7 @@ contract PresaleSwap is Ownable, Pausable {
         // on second call DO clean up
         if (cleanCalled == true) {
             PPool.clean();
-            uint256 notAllocated = token.balanceOf(address(this));
+            uint256 notAllocated = SGN.balanceOf(address(this));
             SGN.transfer(owner, notAllocated);
             selfdestruct(owner);
         }
@@ -127,5 +128,8 @@ contract PresaleSwap is Ownable, Pausable {
         TokenBucket = newBucket;
         emit TokenBucketChanged(newBucket);
     }
-
+    
+    function showAllowance(address beneficiary) public view returns (uint256) {
+        return addAllowance[beneficiary];
+    }
 }

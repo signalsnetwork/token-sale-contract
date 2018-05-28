@@ -7,11 +7,11 @@ import '../mainsale/SignalsToken.sol';
 
 contract Bounty is Ownable, Pausable {
     SignalsToken SGN = SignalsToken(0xb2135ab9695a7678dd590b1a996cb0f37bcb0718);
-    address public TokenBucket = 0x0; //TODO: change
+    address public TokenBucket; //TODO: change
 
     mapping (string => bool) onlyOnce;
 
-    event BountyPaid(address beneficiary, uint256 amount);
+    event BountyPaid(string uID, address beneficiary, uint256 amount);
     event TokenBucketChanged(address newBucket);
 
 
@@ -30,11 +30,11 @@ contract Bounty is Ownable, Pausable {
      * @dev Relies on proper backend handling
      * @dev Requires SGN allowance at the TokenBucket for this contract
      */
-    function payBounty(string uID, address beneficiary, uint256 amount) onlyOwner public{
+    function payBounty(string uID, address beneficiary, uint256 amount) onlyOwner public {
         require(!onlyOnce[uID]);
 
         SGN.transferFrom(TokenBucket, beneficiary, amount);
-        emit BountyPaid(beneficiary, amount);
+        emit BountyPaid(uID, beneficiary, amount);
 
         onlyOnce[uID] = true;
     }
